@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>WA Bot Dashboard</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <h1>Status: <span id="status">Loading...</span></h1>
+    <div id="qr-container" style="display:none;">
+        <h3>Scan QR:</h3>
+        <img id="qr" src="" width="250">
+    </div>
+    <button id="disconnect-btn" style="display:none;">Disconnect</button>
+
+    <h2>Daftar Grup</h2>
+    <ul id="group-list"></ul>
+
+    <script>
+        const socket = io();
+        const statusEl = document.getElementById('status');
+        const qrContainer = document.getElementById('qr-container');
+        const qrImg = document.getElementById('qr');
+        const disconnectBtn = document.getElementById('disconnect-btn');
+        const groupList = document.getElementById('group-list');
+
+        socket.on('connection-status', (connected) => {
+            statusEl.textContent = connected ? 'Terkoneksi' : 'Tidak Terkoneksi';
+            disconnectBtn.style.display = connected ? 'inline-block' : 'none';
+            if (connected) {
+                qrContainer.style.display = 'none';
+                loadGroups();
+            }
+        });
+
+        socket.on('qr', (qrImage) => {
+            if (qrImage) {
+                qrImg.src = qrImage;
+                qrContainer.style.display = 'block';
+            } else {
+                qrContainer.style.display = 'none';
+            }
+        });
+
+        disconnectBtn.addEventListener('click', async () => {
+            await fetch('/disconnect', { method: 'POST' });
+        });
+
+        async function loadGroups() {
+            const res = await fetch('/groups');
+            const data = await res.json();
+            groupList.innerHTML = '';
+            if (data.status) {
+                data.data.forEach(group => {
+                    const li = document.createElement('li');
+                    li.textContent = `${group.subject} (${group.id})`;
+                    groupList.appendChild(li);
+                });
+            }
+        }
+
+    </script>
+</body>
+
+</html>

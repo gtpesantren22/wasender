@@ -1,0 +1,16 @@
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+
+# Baileys session
+auth_info/
+# System
+.DS_Store
+Thumbs.db
