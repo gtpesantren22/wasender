@@ -76,16 +76,25 @@ startSock();
 app.post('/send-personal', async (req, res) => {
     const { number, message } = req.body;
     if (!number || !message) {
-        return res.status(400).json({ status: false, message: 'Parameter number dan message wajib diisi.' });
+        return res.status(400).json({
+            status: false,
+            message: 'Parameter number dan message wajib diisi.'
+        });
     }
 
-    try {
-        const jid = formatNumber(number);
-        await sock.sendMessage(jid, { text: message });
-        res.json({ status: true, message: 'Pesan berhasil dikirim.' });
-    } catch (err) {
-        res.status(500).json({ status: false, message: 'Gagal mengirim pesan', error: err.toString() });
-    }
+    const jid = formatNumber(number);
+
+    // Kirim respon cepat ke client
+    res.json({ status: true, message: 'Pesan sedang dikirim.' });
+
+    // Jalankan pengiriman di background (tidak menghambat respon)
+    sock.sendMessage(jid, { text: message })
+        .then(() => {
+            console.log(`✅ Pesan ke ${jid} berhasil dikirim`);
+        })
+        .catch((err) => {
+            console.error(`❌ Gagal kirim pesan ke ${jid}:`, err);
+        });
 });
 
 // API: Kirim pesan ke grup
