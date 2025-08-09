@@ -97,21 +97,36 @@ app.post('/send-personal', async (req, res) => {
         });
 });
 
+
 // API: Kirim pesan ke grup
-app.post('/send-group', async (req, res) => {
+app.post('/send-group', (req, res) => {
     const { groupId, message } = req.body;
+
     if (!groupId || !message) {
-        return res.status(400).json({ status: false, message: 'Parameter groupId dan message wajib diisi.' });
+        return res.status(400).json({
+            status: false,
+            message: 'Parameter groupId dan message wajib diisi.'
+        });
     }
 
-    try {
-        const jid = groupId.endsWith('@g.us') ? groupId : groupId + '@g.us';
-        await sock.sendMessage(jid, { text: message });
-        res.json({ status: true, message: 'Pesan berhasil dikirim ke grup.' });
-    } catch (err) {
-        res.status(500).json({ status: false, message: 'Gagal mengirim pesan', error: err.toString() });
-    }
+    const jid = groupId.endsWith('@g.us') ? groupId : groupId + '@g.us';
+
+    // Kirim respon cepat ke client
+    res.json({
+        status: true,
+        message: 'Pesan sedang dikirim ke grup.'
+    });
+
+    // Kirim pesan di background
+    sock.sendMessage(jid, { text: message })
+        .then(() => {
+            console.log(`✅ Pesan berhasil dikirim ke grup: ${jid}`);
+        })
+        .catch((err) => {
+            console.error(`❌ Gagal mengirim pesan ke grup ${jid}:`, err);
+        });
 });
+
 
 // API: List grup
 app.get('/groups', async (req, res) => {
