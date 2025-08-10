@@ -12,6 +12,7 @@ const { Server } = require('socket.io');
 const bodyParser = require('body-parser');
 const qrcode = require('qrcode');
 const { formatNumber } = require('./helpers');
+const axios = require('axios');
 
 const PORT = process.env.PORT || 3000;
 const BOT_NAME = process.env.BOT_NAME || 'BotKu';
@@ -175,32 +176,42 @@ io.on('connection', (socket) => {
     socket.emit('connection-status', isConnected);
 });
 
-app.get('/send-image', async (req, res) => {
-    const { number, caption, imageUrl } = req.query;
+app.post('/send-group-image', async (req, res) => {
+    const { groupId, imageUrl, caption } = req.body;
 
-    if (!number || !imageUrl) {
-        return res.status(400).json({ status: false, message: 'Parameter number dan imageUrl wajib diisi.' });
+    if (!groupId || !imageUrl) {
+        return res.status(400).json({
+            status: false,
+            message: 'Parameter groupId dan imageUrl wajib diisi.'
+        });
     }
 
-    const jid = number.endsWith('@s.whatsapp.net') ? number : number + '@s.whatsapp.net';
-
     try {
-        // Ambil data gambar dari URL
+        const jid = groupId.endsWith('@g.us') ? groupId : groupId + '@g.us';
+
+        // Ambil gambar dari URL (buffer)
         const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
         const buffer = Buffer.from(response.data, 'binary');
 
+        // Kirim gambar
         await sock.sendMessage(jid, {
             image: buffer,
             caption: caption || ''
         });
 
-        res.json({ status: true, message: 'Gambar berhasil dikirim.' });
+        res.json({
+            status: true,
+            message: 'Gambar berhasil dikirim ke grup.'
+        });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ status: false, message: 'Gagal mengirim gambar.', error: err.toString() });
+        console.error('❌ Gagal mengirim gambar:', err);
+        res.status(500).json({
+            status: false,
+            message: 'Gagal mengirim gambar ke grup.',
+            error: err.message
+        });
     }
 });
-
 app.get('/send-url', async (req, res) => {
     const { number, url, message } = req.query;
 

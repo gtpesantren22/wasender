@@ -11,6 +11,8 @@ yarn-error.log*
 
 # Baileys session
 auth_info/
+hasil_screen/
+
 # System
 .DS_Store
 Thumbs.db
