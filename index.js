@@ -1,18 +1,19 @@
-const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    fetchLatestBaileysVersion,
-    DisconnectReason
-} = require('@whiskeysockets/baileys');
-require('dotenv').config();
-const { Boom } = require('@hapi/boom');
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const bodyParser = require('body-parser');
-const qrcode = require('qrcode');
-const { formatNumber } = require('./helpers');
-const axios = require('axios');
+import makeWASocket, { 
+    useMultiFileAuthState, 
+    fetchLatestBaileysVersion, 
+    DisconnectReason 
+} from '@whiskeysockets/baileys'
+import { Boom } from '@hapi/boom'
+import fs from 'fs'
+import express from 'express'
+import http from 'http'
+import { Server } from 'socket.io'
+import bodyParser from 'body-parser'
+import qrcode from 'qrcode'
+import axios from 'axios'
+import dotenv from 'dotenv'
+import { formatNumber } from './helpers.js' // tambahkan .js saat import file lokal
+dotenv.config()
 
 const PORT = process.env.PORT || 3000;
 const BOT_NAME = process.env.BOT_NAME || 'BotKu';
@@ -149,7 +150,7 @@ app.post('/disconnect', async (req, res) => {
             isConnected = false;
 
             // Hapus file auth agar QR baru muncul
-            const fs = require('fs');
+            // const fs = require('fs');
             const path = './auth_info';
             if (fs.existsSync(path)) {
                 fs.rmSync(path, { recursive: true, force: true });

@@ -1,4 +1,4 @@
-function formatNumber(number) {
+export function formatNumber(number) {
     // Hapus spasi, tanda plus, strip, dan karakter non-angka
     let cleaned = number.replace(/[^0-9]/g, '');
 
@@ -29,6 +29,3 @@ function formatNumber(number) {
     return cleaned + '@s.whatsapp.net';
 }
 
-module.exports = {
-    formatNumber
-};
