@@ -13,10 +13,14 @@ import qrcode from 'qrcode'
 import axios from 'axios'
 import dotenv from 'dotenv'
 import { formatNumber } from './helpers.js' // tambahkan .js saat import file lokal
+import db from "./db.js"
 dotenv.config()
 
 const PORT = process.env.PORT || 3000;
 const BOT_NAME = process.env.BOT_NAME || 'BotKu';
+const VALID_APIKEY = process.env.API_KEY;
+const getToday = () => new Date().toISOString().split("T")[0];
+const getTime = () => new Date().toTimeString().split(" ")[0];
 
 let sock;
 let isConnected = false;
@@ -278,7 +282,125 @@ app.get('/send-ad-message', async (req, res) => {
     }
   });
   
-  
+// Endpoint tambah data
+app.post("/add-absen", async (req, res) => {
+    const conn = await db.getConnection(); // transaksi ringan
+
+    try {
+        const { kode_guru, apiKey } = req.body;
+        const today = getToday();
+        const timeNow = getTime();
+        
+        if (apiKey !== VALID_APIKEY) {
+            return res.status(401).json({ success: false, message: "API Key tidak valid" });
+        }
+
+        if (!kode_guru) {
+            return res.status(400).json({ success: false, message: "kode_guru wajib dikirim" });
+        }
+
+        // ===============================================================
+        // ⚡ OPTIMASI: Cek siswa dan guru sekaligus (1 query UNION)
+        // ===============================================================
+        const [cek] = await conn.query(
+            `
+            SELECT 'siswa' AS tipe, nis AS id 
+            FROM santri_code WHERE code = ? 
+            UNION
+            SELECT 'guru' AS tipe, kode_guru AS id 
+            FROM guru WHERE code = ?
+            LIMIT 1
+            `,
+            [kode_guru, kode_guru]
+        );
+
+        if (cek.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Kode tidak ditemukan"
+            });
+        }
+
+        const data = cek[0];
+
+        // ===============================================================
+        // ⚡ ABSENSI SISWA (optimized)
+        // ===============================================================
+        if (data.tipe === "siswa") {
+            const [already] = await conn.query(
+                "SELECT 1 FROM waqiah WHERE nis = ? AND tanggal = ? LIMIT 1",
+                [data.id, today]
+            );
+
+            if (already.length === 0) {
+                await conn.query(
+                    "INSERT INTO waqiah (nis, tanggal, hadir) VALUES (?, ?, ?)",
+                    [data.id, today, timeNow]
+                );
+            }
+
+            return res.json({
+                success: true,
+                tipe: "siswa",
+                status: already.length ? "error" : "success",
+                message: already.length ? "Sudah Absen" : "Berhasil"
+            });
+        }
+
+        // ===============================================================
+        // ⚡ ABSENSI GURU (optimized)
+        // ===============================================================
+
+        // Cek sekaligus 2 tabel (mengajar + kehadiran)
+        const [guruCheck] = await conn.query(
+            `
+            SELECT 
+                (SELECT COUNT(*) FROM kehadiran WHERE guru=? AND tanggal=?) AS kehadiran,
+                (SELECT COUNT(*) FROM apel_guru WHERE kode_guru=? AND tanggal=?) AS apel
+            `,
+            [data.id, today, data.id, today]
+        );
+
+        let result = [];
+
+        // Insert mengajar jika belum
+        if (guruCheck[0].kehadiran == 0) {
+            await conn.query(
+                "INSERT INTO kehadiran (guru, tanggal, ket) VALUES (?, ?, 1)",
+                [data.id, today]
+            );
+            result.push("Absen mengajar dicatat");
+        } else {
+            result.push("Absen mengajar sudah ada");
+        }
+
+        // Insert hadir guru jika belum
+        if (guruCheck[0].apel == 0) {
+            await conn.query(
+                "INSERT INTO apel_guru (kode_guru, tanggal, ket) VALUES (?, ?, 'hadir')",
+                [data.id, today]
+            );
+            result.push("Absen guru dicatat");
+        } else {
+            result.push("Absen guru sudah ada");
+        }
+
+        return res.json({
+            success: true,
+            tipe: "guru",
+            message: "Proses absensi guru selesai",
+            result
+        });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, error: err.message });
+
+    } finally {
+        conn.release();
+    }
+});
+
 server.listen(PORT, () => {
     console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
 });
