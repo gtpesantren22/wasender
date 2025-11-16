@@ -371,6 +371,10 @@ app.post("/add-absen", async (req, res) => {
             );
             result.push("Absen mengajar dicatat");
         } else {
+            await conn.query(
+                "UPDATE kehadiran SET ket = 1 WHERE guru = ? AND tanggal = ?",
+                [data.id, today]
+            );
             result.push("Absen mengajar sudah ada");
         }
 
@@ -382,6 +386,10 @@ app.post("/add-absen", async (req, res) => {
             );
             result.push("Absen guru dicatat");
         } else {
+             await conn.query(
+                "UPDATE apel_guru SET ket = 'hadir' WHERE kode_guru = ? AND tanggal = ? ",
+                [data.id, today]
+            );
             result.push("Absen guru sudah ada");
         }
 
