@@ -78,14 +78,14 @@ async function startSock() {
 
 startSock();
 
-async function getGuruPhoneById(kode_guru) {
+async function getGuruById(kode_guru) {
     const [rows] = await db.query(
-        "SELECT no_hp FROM guru WHERE kode_guru = ? LIMIT 1",
+        "SELECT * FROM guru WHERE kode_guru = ? LIMIT 1",
         [kode_guru]
     );
 
     if (rows.length === 0) return null;
-    return rows[0].no_hp; // Pastikan nama kolom sesuai tabel kamu
+    return rows[0]; // Pastikan nama kolom sesuai tabel kamu
 }
 
 async function sendPersonal(number, message) {
@@ -404,13 +404,19 @@ app.post("/add-absen", async (req, res) => {
             );
             result.push("Absen guru dicatat");
 
-            const noWA = await getGuruPhoneById(data.id);
-            sendPersonal(
-    noWA,
-`Selamat Datang !.
-Kehadiran Anda telah tercatat di SMK Darul Lughah wal Karomah pada hari ${today}, pukul ${timeNow}.
+            const guruData = await getGuruById(data.id);
+            if (guruData) {
+                const noWA = guruData.no_wa;
+                const nama = guruData.nama;
+                sendPersonal(
+                    noWA,
+                    `Selamat Datang, ${nama}.
+
+Di SMK Darul Lughah wal Karomah. Kehadiran Anda telah tercatat pada hari ${today}, pukul ${timeNow}.
+
 Terima kasih.`
-);
+                );
+            }
 
 
         } else {
