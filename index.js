@@ -406,7 +406,7 @@ app.post("/add-absen", async (req, res) => {
 
             const guruData = await getGuruById(data.id);
             if (guruData) {
-                const noWA = guruData.no_wa;
+                const noWA = guruData.no_hp;
                 const nama = guruData.nama;
                 sendPersonal(
                     noWA,
