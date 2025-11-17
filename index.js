@@ -19,8 +19,30 @@ dotenv.config()
 const PORT = process.env.PORT || 3000;
 const BOT_NAME = process.env.BOT_NAME || 'BotKu';
 const VALID_APIKEY = process.env.API_KEY;
-const getToday = () => new Date().toISOString().split("T")[0];
-const getTime = () => new Date().toTimeString().split(" ")[0];
+const getToday = () => {
+    return new Date().toLocaleDateString("id-ID", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).split("/").reverse().join("-"); // format YYYY-MM-DD
+};
+const getTime = () => {
+    return new Date().toLocaleTimeString("id-ID", {
+        hour12: false, // format 24 jam
+        timeZone: "Asia/Jakarta" // sesuaikan dengan zona kamu
+    });
+};
+const getTodayLong = () => {
+    const options = { 
+        weekday: "long",   // hari (Senin, Selasa, ...)
+        day: "2-digit",    // tanggal
+        month: "short",    // bulan 3 huruf (Jan, Feb, Mar)
+        year: "numeric",   // tahun 4 digit
+        timeZone: "Asia/Jakarta" // zona WIB
+    };
+    return new Date().toLocaleDateString("id-ID", options);
+};
 
 let sock;
 let isConnected = false;
@@ -407,12 +429,13 @@ app.post("/add-absen", async (req, res) => {
             const guruData = await getGuruById(data.id);
             if (guruData) {
                 const noWA = guruData.no_hp;
-                const nama = guruData.nama;
+                const nama = guruData.nama_guru;
+                const dayIndo = getTodayLong();
                 sendPersonal(
                     noWA,
                     `Selamat Datang, ${nama}.
 
-Di SMK Darul Lughah wal Karomah. Kehadiran Anda telah tercatat pada hari ${today}, pukul ${timeNow}.
+Di SMK Darul Lughah wal Karomah. Kehadiran Anda telah tercatat pada hari ini ${dayIndo}, pukul ${timeNow}.
 
 Terima kasih.`
                 );
