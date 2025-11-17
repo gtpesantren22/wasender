@@ -78,22 +78,22 @@ async function startSock() {
 
 startSock();
 
-// API: Kirim pesan personal
-app.post('/send-personal', async (req, res) => {
-    const { number, message } = req.body;
-    if (!number || !message) {
-        return res.status(400).json({
-            status: false,
-            message: 'Parameter number dan message wajib diisi.'
-        });
-    }
+async function getGuruPhoneById(kode_guru) {
+    const [rows] = await db.query(
+        "SELECT no_hp FROM guru WHERE kode_guru = ? LIMIT 1",
+        [kode_guru]
+    );
+
+    if (rows.length === 0) return null;
+    return rows[0].no_hp; // Pastikan nama kolom sesuai tabel kamu
+}
+
+async function sendPersonal(number, message) {
+    if (!number || !message) return;
 
     const jid = formatNumber(number);
 
-    // Kirim respon cepat ke client
-    res.json({ status: true, message: 'Pesan sedang dikirim.' });
-
-    // Jalankan pengiriman di background (tidak menghambat respon)
+    // Jalankan WA di background tanpa await
     sock.sendMessage(jid, { text: message })
         .then(() => {
             console.log(`✅ Pesan ke ${jid} berhasil dikirim`);
@@ -101,6 +101,24 @@ app.post('/send-personal', async (req, res) => {
         .catch((err) => {
             console.error(`❌ Gagal kirim pesan ke ${jid}:`, err);
         });
+}
+
+// API: Kirim pesan personal
+app.post('/send-personal', async (req, res) => {
+    const { number, message } = req.body;
+
+    if (!number || !message) {
+        return res.status(400).json({
+            status: false,
+            message: 'Parameter number dan message wajib diisi.'
+        });
+    }
+
+    // Respon cepat
+    res.json({ status: true, message: 'Pesan sedang dikirim.' });
+
+    // Kirim personal di background
+    sendPersonal(number, message);
 });
 
 
@@ -385,6 +403,16 @@ app.post("/add-absen", async (req, res) => {
                 [data.id, today]
             );
             result.push("Absen guru dicatat");
+
+            const noWA = await getGuruPhoneById(data.id);
+            sendPersonal(
+    noWA,
+`Selamat Datang !.
+Kehadiran Anda telah tercatat di SMK Darul Lughah wal Karomah pada hari ${today}, pukul ${timeNow}.
+Terima kasih.`
+);
+
+
         } else {
             result.push("Absen guru sudah ada");
         }
