@@ -127,12 +127,19 @@ async function sendPersonal(number, message) {
 
 // API: Kirim pesan personal
 app.post('/send-personal', async (req, res) => {
-    const { number, message } = req.body;
+    const { number, message, apiKey } = req.body;
 
-    if (!number || !message) {
+    if (!number || !message|| !apiKey) {
         return res.status(400).json({
             status: false,
-            message: 'Parameter number dan message wajib diisi.'
+            message: 'Parameter number, message, dan apiKey wajib diisi.'
+        });
+    }
+    
+    if (apiKey != VALID_APIKEY) {
+        return res.status(400).json({
+            status: false,
+            message: 'Api key tidak valid.'
         });
     }
 
@@ -146,12 +153,19 @@ app.post('/send-personal', async (req, res) => {
 
 // API: Kirim pesan ke grup
 app.post('/send-group', (req, res) => {
-    const { groupId, message } = req.body;
+    const { groupId, message, apiKey } = req.body;
 
-    if (!groupId || !message) {
+    if (!groupId || !message || !apiKey) {
         return res.status(400).json({
             status: false,
             message: 'Parameter groupId dan message wajib diisi.'
+        });
+    }
+
+    if (apiKey != VALID_APIKEY) {
+        return res.status(400).json({
+            status: false,
+            message: 'Api key tidak valid.'
         });
     }
 
