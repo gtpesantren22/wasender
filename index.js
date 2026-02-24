@@ -44,6 +44,27 @@ const getTodayLong = () => {
     return new Date().toLocaleDateString("id-ID", options);
 };
 
+const getNowJakarta = () => {
+    const now = new Date();
+
+    const jakartaTime = new Date(
+        now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
+    );
+
+    const year = jakartaTime.getFullYear();
+    const month = String(jakartaTime.getMonth() + 1).padStart(2, "0");
+    const day = String(jakartaTime.getDate()).padStart(2, "0");
+
+    const hours = String(jakartaTime.getHours()).padStart(2, "0");
+    const minutes = String(jakartaTime.getMinutes()).padStart(2, "0");
+    const seconds = String(jakartaTime.getSeconds()).padStart(2, "0");
+
+    return {
+        date: `${year}-${month}-${day}`,
+        time: `${hours}:${minutes}:${seconds}`
+    };
+};
+
 let sock;
 let isConnected = false;
 
@@ -342,8 +363,9 @@ app.post("/add-absen", async (req, res) => {
 
     try {
         const { kode_guru, apiKey } = req.body;
-        const today = getToday();
-        const timeNow = getTime();
+        // const today = getToday();
+        // const timeNow = getTime();
+        const { date: today, time: timeNow } = getNowJakarta();
         
         if (apiKey !== VALID_APIKEY) {
             return res.status(401).json({ success: false, message: "API Key tidak valid" });
