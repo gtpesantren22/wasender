@@ -359,7 +359,7 @@ app.post("/add-absen", async (req, res) => {
         const [cek] = await conn.query(
             `
             SELECT 'siswa' AS tipe, nis AS id 
-            FROM santri_code WHERE code = ? 
+            FROM tb_santri WHERE rfid = ? 
             UNION
             SELECT 'guru' AS tipe, kode_guru AS id 
             FROM guru WHERE code = ?
