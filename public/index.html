@@ -1,66 +1,472 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="id">
 <head>
-    <title>WA Bot Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Multi-Device WA Bot</title>
     <script src="/socket.io/socket.io.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #00b894;
+            --primary-hover: #00a884;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --danger: #ff7675;
+            --success: #00b894;
+            --warning: #ffeaa7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-weight: 800;
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #00b894, #00cec9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card Styling */
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Form */
+        .form-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0, 184, 148, 0.2);
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button.danger {
+            background: var(--danger);
+        }
+
+        button.danger:hover {
+            background: #d63031;
+        }
+
+        /* Session List */
+        .session-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .session-item {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .session-item:hover {
+            background: rgba(0, 184, 148, 0.1);
+            border-color: var(--primary);
+        }
+
+        .session-item.active {
+            background: rgba(0, 184, 148, 0.2);
+            border-color: var(--primary);
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .status-connected {
+            background: rgba(0, 184, 148, 0.2);
+            color: var(--success);
+        }
+
+        .status-disconnected {
+            background: rgba(255, 118, 117, 0.2);
+            color: var(--danger);
+        }
+
+        /* Main Panel */
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .qr-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+
+        .qr-box img {
+            border: 10px solid white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            margin-top: 1rem;
+        }
+
+        .group-list {
+            list-style: none;
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .group-item {
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            border-left: 3px solid var(--primary);
+        }
+
+        .empty-state {
+            color: #64748b;
+            text-align: center;
+            padding: 2rem 0;
+        }
+    </style>
 </head>
-
 <body>
-    <h1>Status: <span id="status">Loading...</span></h1>
-    <div id="qr-container" style="display:none;">
-        <h3>Scan QR:</h3>
-        <img id="qr" src="" width="250">
-    </div>
-    <button id="disconnect-btn" style="display:none;">Disconnect</button>
 
-    <h2>Daftar Grup</h2>
-    <ul id="group-list"></ul>
+    <header>
+        <h1>WA Bot Dashboard</h1>
+        <p>Kelola banyak perangkat/nomor WhatsApp secara terpusat</p>
+    </header>
+
+    <div class="container">
+        <!-- Sidebar Sesi -->
+        <div class="card">
+            <h2>Daftar Device</h2>
+            
+            <div class="form-group">
+                <input type="text" id="new-session-id" placeholder="Masukkan ID Device Baru...">
+                <button id="add-session-btn">Tambah</button>
+            </div>
+
+            <div class="session-list" id="session-list">
+                <!-- Session items loaded here -->
+            </div>
+        </div>
+
+        <!-- Area Detail Sesi -->
+        <div class="main-panel">
+            <div class="card">
+                <h2>Detail Device: <span id="current-device-title">-</span></h2>
+                
+                <div id="no-selection" class="empty-state">
+                    Silakan pilih atau buat device terlebih dahulu.
+                </div>
+
+                <div id="device-details" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <div>
+                            Status: <span id="device-status" class="status-badge status-disconnected">Loading...</span>
+                        </div>
+                        <button id="disconnect-btn" class="danger">Disconnect / Hapus</button>
+                    </div>
+
+                    <div id="qr-container" class="qr-box" style="display: none;">
+                        <p>Scan QR Code menggunakan WhatsApp Anda:</p>
+                        <img id="qr-img" src="" width="250" alt="QR Code WA">
+                    </div>
+
+                    <div id="connected-features" style="display: none; margin-top: 1.5rem;">
+                        <h3>Daftar Grup Tergabung</h3>
+                        <ul id="group-list" class="group-list">
+                            <!-- Groups list -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
+        let currentSessionId = null;
         const socket = io();
-        const statusEl = document.getElementById('status');
-        const qrContainer = document.getElementById('qr-container');
-        const qrImg = document.getElementById('qr');
-        const disconnectBtn = document.getElementById('disconnect-btn');
-        const groupList = document.getElementById('group-list');
 
+        // DOM Elements
+        const sessionListEl = document.getElementById('session-list');
+        const newSessionInput = document.getElementById('new-session-id');
+        const addSessionBtn = document.getElementById('add-session-btn');
+        const currentDeviceTitle = document.getElementById('current-device-title');
+        const noSelectionEl = document.getElementById('no-selection');
+        const deviceDetailsEl = document.getElementById('device-details');
+        const deviceStatusEl = document.getElementById('device-status');
+        const disconnectBtn = document.getElementById('disconnect-btn');
+        const qrContainer = document.getElementById('qr-container');
+        const qrImg = document.getElementById('qr-img');
+        const connectedFeatures = document.getElementById('connected-features');
+        const groupListEl = document.getElementById('group-list');
+
+        // Load all sessions
+        async function loadSessions() {
+            try {
+                const res = await fetch('/sessions');
+                const data = await res.json();
+                
+                sessionListEl.innerHTML = '';
+                if (data.status && data.data.length > 0) {
+                    data.data.forEach(session => {
+                        const item = document.createElement('div');
+                        item.className = `session-item ${session.sessionId === currentSessionId ? 'active' : ''}`;
+                        item.onclick = () => selectSession(session.sessionId);
+
+                        const statusText = session.connected ? 'Terkoneksi' : 'Terputus';
+                        const statusClass = session.connected ? 'status-connected' : 'status-disconnected';
+
+                        item.innerHTML = `
+                            <strong>${session.sessionId}</strong>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        `;
+                        sessionListEl.appendChild(item);
+                    });
+                } else {
+                    sessionListEl.innerHTML = '<div class="empty-state">Belum ada device.</div>';
+                }
+            } catch (err) {
+                console.error('Gagal memuat sesi:', err);
+            }
+        }
+
+        // Select a session
+        function selectSession(sessionId) {
+            currentSessionId = sessionId;
+            currentDeviceTitle.textContent = sessionId;
+            noSelectionEl.style.display = 'none';
+            deviceDetailsEl.style.display = 'block';
+            qrContainer.style.display = 'none';
+            connectedFeatures.style.display = 'none';
+
+            // Beri tahu socket room
+            socket.emit('join-session', sessionId);
+            
+            // Refresh visual selection
+            const items = document.querySelectorAll('.session-item');
+            items.forEach(item => {
+                if (item.querySelector('strong').textContent === sessionId) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        // Socket listeners
         socket.on('connection-status', (connected) => {
-            statusEl.textContent = connected ? 'Terkoneksi' : 'Tidak Terkoneksi';
-            disconnectBtn.style.display = connected ? 'inline-block' : 'none';
+            if (!currentSessionId) return;
+            
+            deviceStatusEl.textContent = connected ? 'Terkoneksi' : 'Terputus';
+            deviceStatusEl.className = `status-badge ${connected ? 'status-connected' : 'status-disconnected'}`;
+            
             if (connected) {
                 qrContainer.style.display = 'none';
+                connectedFeatures.style.display = 'block';
                 loadGroups();
+            } else {
+                connectedFeatures.style.display = 'none';
             }
+            loadSessions(); // Refresh daftar sesi untuk update status badge
         });
 
         socket.on('qr', (qrImage) => {
+            if (!currentSessionId) return;
             if (qrImage) {
                 qrImg.src = qrImage;
-                qrContainer.style.display = 'block';
+                qrContainer.style.display = 'flex';
             } else {
                 qrContainer.style.display = 'none';
             }
         });
 
-        disconnectBtn.addEventListener('click', async () => {
-            await fetch('/disconnect', { method: 'POST' });
+        // Create new session
+        addSessionBtn.addEventListener('click', async () => {
+            const sessionId = newSessionInput.value.trim();
+            if (!sessionId) return alert('ID Device tidak boleh kosong!');
+
+            try {
+                const res = await fetch('/sessions/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId })
+                });
+                const data = await res.json();
+                
+                if (data.status) {
+                    newSessionInput.value = '';
+                    loadSessions();
+                    selectSession(sessionId);
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert('Gagal membuat device baru.');
+            }
         });
 
-        async function loadGroups() {
-            const res = await fetch('/groups');
-            const data = await res.json();
-            groupList.innerHTML = '';
-            if (data.status) {
-                data.data.forEach(group => {
-                    const li = document.createElement('li');
-                    li.textContent = `${group.subject} (${group.id})`;
-                    groupList.appendChild(li);
+        // Disconnect session
+        disconnectBtn.addEventListener('click', async () => {
+            if (!currentSessionId) return;
+            if (!confirm(`Apakah Anda yakin ingin memutuskan koneksi dan menghapus sesi [${currentSessionId}]?`)) return;
+
+            try {
+                const res = await fetch('/disconnect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: currentSessionId })
                 });
+                const data = await res.json();
+                alert(data.message);
+                
+                // Reset UI
+                currentSessionId = null;
+                currentDeviceTitle.textContent = '-';
+                deviceDetailsEl.style.display = 'none';
+                noSelectionEl.style.display = 'block';
+                loadSessions();
+            } catch (err) {
+                alert('Gagal memutuskan koneksi.');
+            }
+        });
+
+        // Load groups for selected session
+        async function loadGroups() {
+            if (!currentSessionId) return;
+            try {
+                const res = await fetch(`/groups?sessionId=${currentSessionId}`);
+                const data = await res.json();
+                groupListEl.innerHTML = '';
+                
+                if (data.status && data.data.length > 0) {
+                    data.data.forEach(group => {
+                        const li = document.createElement('li');
+                        li.className = 'group-item';
+                        li.textContent = `${group.subject} (${group.id})`;
+                        groupListEl.appendChild(li);
+                    });
+                } else {
+                    groupListEl.innerHTML = '<li class="empty-state">Tidak ada grup yang ditemukan.</li>';
+                }
+            } catch (err) {
+                console.error('Gagal memuat grup:', err);
             }
         }
 
+        // Initial load
+        loadSessions();
     </script>
 </body>
-
 </html>
