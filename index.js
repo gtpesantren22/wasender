@@ -356,14 +356,18 @@ app.post('/disconnect', async (req, res) => {
 
 // API: Kirim gambar ke grup
 app.post('/send-group-image', async (req, res) => {
-    const { groupId, imageUrl, caption, sessionId } = req.body;
+    const { groupId, imageUrl, caption, sessionId, apiKey } = req.body;
     const activeSession = sessionId || 'default';
 
-    if (!groupId || !imageUrl) {
+    if (!groupId || !imageUrl || !apiKey) {
         return res.status(400).json({
             status: false,
-            message: 'Parameter groupId dan imageUrl wajib diisi.'
+            message: 'Parameter groupId, imageUrl, dan apiKey wajib diisi.'
         });
+    }
+
+    if (apiKey !== VALID_APIKEY) {
+        return res.status(400).json({ status: false, message: 'Api key tidak valid.' });
     }
 
     const sock = sessions.get(activeSession);
@@ -393,11 +397,15 @@ app.post('/send-group-image', async (req, res) => {
 });
 
 app.get('/send-url', async (req, res) => {
-    const { number, url, message, sessionId } = req.query;
+    const { number, url, message, sessionId, apiKey } = req.query;
     const activeSession = sessionId || 'default';
 
-    if (!number || !url) {
-        return res.status(400).json({ status: false, message: 'Parameter number dan url wajib diisi.' });
+    if (!number || !url || !apiKey) {
+        return res.status(400).json({ status: false, message: 'Parameter number, url, dan apiKey wajib diisi.' });
+    }
+
+    if (apiKey !== VALID_APIKEY) {
+        return res.status(400).json({ status: false, message: 'Api key tidak valid.' });
     }
 
     const sock = sessions.get(activeSession);
@@ -418,11 +426,15 @@ app.get('/send-url', async (req, res) => {
 });
 
 app.get('/send-ad-message', async (req, res) => {
-    const { number, title, body, url, image, sessionId } = req.query;
+    const { number, title, body, url, image, sessionId, apiKey } = req.query;
     const activeSession = sessionId || 'default';
   
-    if (!number || !title || !body || !url || !image) {
+    if (!number || !title || !body || !url || !image || !apiKey) {
       return res.status(400).json({ status: false, message: 'Parameter wajib diisi.' });
+    }
+  
+    if (apiKey !== VALID_APIKEY) {
+        return res.status(400).json({ status: false, message: 'Api key tidak valid.' });
     }
   
     const sock = sessions.get(activeSession);
