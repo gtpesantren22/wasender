@@ -274,6 +274,48 @@ app.post('/send-personal', async (req, res) => {
     sendPersonal(activeSession, number, message);
 });
 
+// API: Kirim gambar personal
+app.post('/send-image', async (req, res) => {
+    const { number, imageUrl, caption, sessionId, apiKey } = req.body;
+    const activeSession = sessionId || 'default';
+
+    if (!number || !imageUrl || !apiKey) {
+        return res.status(400).json({
+            status: false,
+            message: 'Parameter number, imageUrl, dan apiKey wajib diisi.'
+        });
+    }
+
+    if (apiKey !== VALID_APIKEY) {
+        return res.status(400).json({ status: false, message: 'Api key tidak valid.' });
+    }
+
+    const sock = sessions.get(activeSession);
+    if (!sock || !connectionStates.get(activeSession)) {
+        return res.status(400).json({ status: false, message: `Sesi '${activeSession}' belum terhubung.` });
+    }
+
+    try {
+        const jid = formatNumber(number);
+        const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        const buffer = Buffer.from(response.data, 'binary');
+
+        await sock.sendMessage(jid, {
+            image: buffer,
+            caption: caption || ''
+        });
+
+        res.json({ status: true, message: 'Gambar berhasil dikirim.' });
+    } catch (err) {
+        console.error('❌ Gagal mengirim gambar:', err);
+        res.status(500).json({
+            status: false,
+            message: 'Gagal mengirim gambar.',
+            error: err.message
+        });
+    }
+});
+
 // API: Kirim pesan ke grup
 app.post('/send-group', (req, res) => {
     const { groupId, message, apiKey, sessionId } = req.body;
@@ -396,8 +438,8 @@ app.post('/send-group-image', async (req, res) => {
     }
 });
 
-app.get('/send-url', async (req, res) => {
-    const { number, url, message, sessionId, apiKey } = req.query;
+app.post('/send-url', async (req, res) => {
+    const { number, url, message, sessionId, apiKey } = req.body;
     const activeSession = sessionId || 'default';
 
     if (!number || !url || !apiKey) {
@@ -425,8 +467,8 @@ app.get('/send-url', async (req, res) => {
     }
 });
 
-app.get('/send-ad-message', async (req, res) => {
-    const { number, title, body, url, image, sessionId, apiKey } = req.query;
+app.post('/send-ad-message', async (req, res) => {
+    const { number, title, body, url, image, sessionId, apiKey } = req.body;
     const activeSession = sessionId || 'default';
   
     if (!number || !title || !body || !url || !image || !apiKey) {
